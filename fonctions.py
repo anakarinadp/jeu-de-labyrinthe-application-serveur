@@ -5,6 +5,7 @@ qui vont être apelées pour les autres fichiers"""
 
 import os
 import pickle
+import random
 from labyrinthe import Labyrinthe
 
 def creer_labyrinthe_depuis_chaine(chaine):
@@ -12,6 +13,8 @@ def creer_labyrinthe_depuis_chaine(chaine):
 	et ajoute les eléments principales à partir de chaine"""
 	obstacles = []
 	portes = []
+	joueurs = []
+	vides = []
 
 	i = 0
 	x = 0
@@ -31,18 +34,67 @@ def creer_labyrinthe_depuis_chaine(chaine):
 			sortie = coord
 			x += 1
 		elif chaine[i] == "\n": # Saut de ligne
-			longueur = x + 1
+			longueur = x
 			y += 1
 			x = 0
 		else: # Space
 			x += 1
+			if coord != (10,10):
+				vides.append(coord)
 		i += 1
 	
 	hauteur  = y + 1
 	
-	labyrinthe = Labyrinthe(robot, obstacles, portes, sortie, longueur, hauteur)
+	obstacles.sort()
+	portes.sort()
+	vides.sort()
+	
+	labyrinthe = Labyrinthe(robot, obstacles, portes, sortie, longueur, hauteur, joueurs, vides)
 	return labyrinthe
 
+def creer_robot(labyrinthe):
+	"""Fonction permettant de créer le robot de forme aleatorire"""
+	robot = random.choice(labyrinthe.vides)
+	labyrinthe.robot = robot
+	labyrinthe.vides.remove(robot)
+	labyrinthe.joueurs.append(robot)
+	return labyrinthe
+
+def convertir_labyrinthe_en_chaine(labyrinthe):
+	"""Cette fonction reçoi un labyrinthe et fait la transformation
+	en chaine de caractères pour pouvoir lui envoyer au client"""
+	
+	x = 0
+	y = 0
+	chaine = ""
+	
+	#print("Sortie: {}".format(labyrinthe.sortie))
+	
+	while y < labyrinthe.hauteur:
+		while x < labyrinthe.longueur + 1:
+			coord = (x,y)
+			if coord in labyrinthe.obstacles:
+				symbole = "O"
+			elif coord in labyrinthe.portes:
+				symbole = "."
+			elif coord == labyrinthe.sortie:
+				symbole = "U"
+			elif coord in labyrinthe.joueurs:
+				symbole = "x"
+			elif coord == labyrinthe.robot:
+				symbole = "X"
+			elif coord in labyrinthe.vides:
+				symbole = " "
+			else: 
+				symbole = "\n"
+			chaine += symbole
+			x += 1		
+		x = 0
+		y += 1
+		
+	return chaine
+		
+	
 def afficher_labyrinthe(labyrinthe):
 	"""Cette fonction permet d'afficher le labyrinthe
 	Reçoit comme paramétre un objet de la classe Labyrinthe"""
