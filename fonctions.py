@@ -54,10 +54,10 @@ def creer_labyrinthe_depuis_chaine(chaine):
 
 def creer_robot(labyrinthe):
 	"""Fonction permettant de créer le robot de forme aleatorire"""
+	labyrinthe.joueurs.append(labyrinthe.robot)
 	robot = random.choice(labyrinthe.vides)
 	labyrinthe.robot = robot
-	labyrinthe.vides.remove(robot)
-	labyrinthe.joueurs.append(robot)
+	labyrinthe.vides.remove(robot)	
 	return labyrinthe
 
 def convertir_labyrinthe_en_chaine(labyrinthe):

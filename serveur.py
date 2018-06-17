@@ -26,11 +26,6 @@ connexion_principale.bind((hote, port))
 connexion_principale.listen(5)
 print("Le serveur écoute à présent sur le port {}".format(port))
 
-serveur_lance = True
-clients_connectes = []
-commence = False
-msg_recu = ""
-
 # On charge les cartes existantes
 cartes = []
 for nom_fichier in os.listdir("cartes"):
@@ -73,6 +68,11 @@ for i, carte in enumerate(cartes):
 
 premier = True
 joueur = 0
+commence = False
+serveur_lance = True
+clients_connectes = []
+msg_recu = ""
+
 while serveur_lance:
 	if not commence:
 		connexions_demandees, wlist, xlist = select.select([connexion_principale], [], [], 0.05)
@@ -81,13 +81,46 @@ while serveur_lance:
 		joueur += 1
 		connexion_avec_client, infos_connexion = connexion.accept()
 		clients_connectes.append(connexion_avec_client)
-		msg_bienvenue = "Bienvenue, joueur " + str(joueur) + ".\n"
-		msg_bienvenue = msg_bienvenue.encode()
-		connexion_avec_client.send(msg_bienvenue)
-		chaine = convertir_labyrinthe_en_chaine(labyrinthe)
-		envoyer = chaine.encode()
-		connexion_avec_client.send(envoyer)
 		
+		msg_bienvenue = "Bienvenue, joueur " + str(joueur) + ".\n\n\n"
+		#msg_bienvenue = msg_bienvenue.encode()
+		#connexion_avec_client.send(msg_bienvenue)
+		
+		if joueur != 1:
+			labyrinthe = creer_robot(labyrinthe)
+		chaine_labyrinthe = convertir_labyrinthe_en_chaine(labyrinthe)
+	
+		#envoyer = chaine.encode()
+		#connexion_avec_client.send(envoyer)
+		
+		chaine_commencer = "\n\nEntrez C pour commencer à jouer :\n "
+		
+		msg_a_envoyer = msg_bienvenue + chaine_labyrinthe + chaine_commencer
+		msg_a_envoyer = msg_a_envoyer.encode()
+		connexion_avec_client.send(msg_a_envoyer)
+		
+		msg_recu = connexion_avec_client.recv(1024)
+		msg_recu = msg_recu.decode()
+		print("Reçu: {}".format(msg_recu))
+		
+		"""if  msg_recu == "c":
+			msg_a_envoyer = "\n\nLa partie commence\n "
+			msg_a_envoyer = msg_a_envoyer.encode()
+			connexion_avec_client.send(msg_a_envoyer)
+			commence = True
+		
+		if not commence and joueur > 1:
+			msg_recu = connexion_avec_client.recv(1024)
+			msg_recu = msg_recu.decode()
+			if msg_recu.lower() == "c":
+				print("Reçu c, la partie commence")
+				commence = True
+		
+		if commence:
+			msg_a_envoyer = "La partie commence !"
+			msg_a_envoyer = msg_a_envoyer.encode()
+			connexion_avec_client.send(msg_a_envoyer)
+			
 	clients_a_lire = []
 	try:
 		clients_a_lire, wlist, xlist = select.select(clients_connectes, [], [], 0.05)
@@ -96,10 +129,6 @@ while serveur_lance:
 	else:
 		for client in clients_a_lire:
 			if not commence:
-				"""if premier:
-					premier = False
-				else:
-					labyrinthe = creer_robot(labyrinthe)"""
 				chaine = convertir_labyrinthe_en_chaine(labyrinthe)
 				envoyer = chaine.encode()
 				client.send(envoyer)
@@ -113,7 +142,7 @@ while serveur_lance:
 				print("La partie a commencé")
 				commence = True
 				#serveur_lance = False
-
+	"""
 print("Fermeture des connexions")
 for client in clients_connectes:
 	client.close()
