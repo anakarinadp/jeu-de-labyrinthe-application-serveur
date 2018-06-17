@@ -18,6 +18,9 @@ from fonctions import *
 hote = ''
 port = 12800
 
+# Les commandes a utiliser
+commandes = ["Q", "N", "E", "S", "O", "m", "p"]
+
 connexion_principale = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 connexion_principale.bind((hote, port))
 connexion_principale.listen(5)
@@ -48,7 +51,8 @@ for i, carte in enumerate(cartes):
 
 # On demande à l'utilisateur de saisir une option
 choix = input("\nEntrez un número de labyrinthe pour commencer à jouer : ")
-while not choix.isnumeric() or len(choix) != 1:
+# isnumeric() renvoie True pour "e" et "g", c'est pour ça que je les ai ajouté dans les conditions
+while not choix.isnumeric() or len(choix) != 1 or choix == "e" or choix == "g":
 	print("Vous n'avez pas choisie une option valide")
 	choix = input("\nEntrez un número de labyrinthe pour commencer à jouer : ")
 
@@ -59,13 +63,30 @@ while int(choix) > len(cartes) or int(choix) < 1:
 
 choix = int(choix)
 
+# On affiche le labyrinthe
+print("\n")
+for i, carte in enumerate(cartes):
+	if i+1 == choix:
+		labyrinthe = carte.labyrinthe
+		afficher_labyrinthe(labyrinthe)
+		#print("Hauteur: {}, longueur: {}".format(labyrinthe.hauteur, labyrinthe.longueur))
+
+premier = True
+joueur = 0
 while serveur_lance:
 	if not commence:
 		connexions_demandees, wlist, xlist = select.select([connexion_principale], [], [], 0.05)
 		
-		for connexion in connexions_demandees:
-			connexion_avec_client, infos_connexion = connexion.accept()
-			clients_connectes.append(connexion_avec_client)
+	for connexion in connexions_demandees:
+		joueur += 1
+		connexion_avec_client, infos_connexion = connexion.accept()
+		clients_connectes.append(connexion_avec_client)
+		msg_bienvenue = "Bienvenue, joueur " + str(joueur) + ".\n"
+		msg_bienvenue = msg_bienvenue.encode()
+		connexion_avec_client.send(msg_bienvenue)
+		chaine = convertir_labyrinthe_en_chaine(labyrinthe)
+		envoyer = chaine.encode()
+		connexion_avec_client.send(envoyer)
 		
 	clients_a_lire = []
 	try:
@@ -74,11 +95,21 @@ while serveur_lance:
 		pass
 	else:
 		for client in clients_a_lire:
-			msg_recu =client.recv(1024)
-			msg_recu = msg_recu.decode()
-			print("Reçu {}".format(msg_recu))
+			if not commence:
+				"""if premier:
+					premier = False
+				else:
+					labyrinthe = creer_robot(labyrinthe)"""
+				chaine = convertir_labyrinthe_en_chaine(labyrinthe)
+				envoyer = chaine.encode()
+				client.send(envoyer)
+			#msg_recu =client.recv(1024)
+			#msg_recu = msg_recu.decode()
+			#print("Reçu {}".format(msg_recu))
+		#for client in clients_connectes:
 			client.send(b"5 / 5")
-			if msg_recu == "c":
+			#print("Clients connectés: {}".format(len(clients_connectes)))
+			if msg_recu == "c" and len(clients_connectes) > 1:
 				print("La partie a commencé")
 				commence = True
 				#serveur_lance = False
